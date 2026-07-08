@@ -123,8 +123,8 @@ const calculateMetadata: CalculateMetadataFunction<MyCompositionProps> = async (
         durationInFrames,
         username: props.username,
       },
-      width: 1280,
-      height: 720,
+      width: 1200,
+      height: 600,
     };
   } catch (err) {
     console.error("Failed to fetch GitHub contributions", err);
@@ -138,8 +138,8 @@ const calculateMetadata: CalculateMetadataFunction<MyCompositionProps> = async (
         durationInFrames: 300,
         username: props.username,
       },
-      width: 1280,
-      height: 720,
+      width: 1200,
+      height: 600,
     };
   }
 };

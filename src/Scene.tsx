@@ -60,6 +60,8 @@ export const Scene: React.FC<MyCompositionProps> = ({ levels, targets, flightPat
       <color attach="background" args={["#030508"]} />
       <React.Suspense fallback={null}>
         <POVCamera flightPath={flightPath} durationInFrames={durationInFrames} targets={targets} />
+        <Stars />
+        <SolarSystem />
         <ambientLight intensity={1.5} />
         <directionalLight position={[10, 20, 10]} intensity={2.5} castShadow />
         
