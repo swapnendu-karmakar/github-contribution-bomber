@@ -28,31 +28,47 @@ const calculateMetadata: CalculateMetadataFunction<MyCompositionProps> = async (
     const res = await fetch(`https://corsproxy.io/?https://github.com/users/${props.username}/contributions?v=${Date.now()}`, {
       signal: abortSignal,
     });
+    
     const html = await res.text();
     
-    const levels: number[] = [];
-    const regex = /data-level="(\d+)"/g;
+    // GitHub's HTML contains missing days at the start or end of the year depending on the calendar alignment.
+    // To map this 100% robustly to our 52x7 grid, we must extract BOTH date and level, 
+    // sort them chronologically, and anchor the newest day to its exact day of the week.
+    const cells: { date: string, level: number }[] = [];
+    const tdRegex = /<td[^>]+class="ContributionCalendar-day"[^>]*>/g;
     let match;
-    while ((match = regex.exec(html)) !== null) {
-      levels.push(parseInt(match[1], 10));
+    while ((match = tdRegex.exec(html)) !== null) {
+      const tdStr = match[0];
+      const dateMatch = tdStr.match(/data-date="([^"]+)"/);
+      const levelMatch = tdStr.match(/data-level="(\d+)"/);
+      if (dateMatch && levelMatch) {
+        cells.push({ date: dateMatch[1], level: parseInt(levelMatch[1], 10) });
+      }
     }
     
+    // Sort chronologically (oldest to newest)
+    cells.sort((a, b) => a.date.localeCompare(b.date));
+
     const COLS = 52;
     const ROWS = 7;
-
-    // GitHub HTML outputs cells in ROW-MAJOR order:
-    // [all Sundays (53 weeks), all Mondays (53 weeks), ..., all Saturdays (53 weeks)]
-    // We must transpose this into COLUMN-MAJOR order for the 3D grid:
-    // [week0: Sun-Sat, week1: Sun-Sat, ..., week51: Sun-Sat]
-    const RAW_COLS = Math.ceil(levels.length / ROWS); // typically 53 weeks
-    const startCol = Math.max(0, RAW_COLS - COLS); // keep last 52 weeks
     const finalLevels: number[] = new Array(COLS * ROWS).fill(0);
-    for (let r = 0; r < ROWS; r++) {
-      for (let rawC = startCol; rawC < RAW_COLS; rawC++) {
-        const srcIdx = r * RAW_COLS + rawC;
-        const destC = rawC - startCol;
-        if (srcIdx < levels.length && destC < COLS) {
-          finalLevels[destC * ROWS + r] = levels[srcIdx];
+    
+    if (cells.length > 0) {
+      const newestDateStr = cells[cells.length - 1].date;
+      // Get day of week (0=Sun, 6=Sat). Use UTC to avoid timezone shifts.
+      const newestDate = new Date(newestDateStr + "T00:00:00Z");
+      let r = newestDate.getUTCDay(); 
+      let c = COLS - 1;
+
+      for (let i = cells.length - 1; i >= 0; i--) {
+        if (c < 0) break; // Grid is full (we only keep the newest 364 days)
+        
+        finalLevels[c * ROWS + r] = cells[i].level;
+        
+        r--;
+        if (r < 0) {
+          r = ROWS - 1;
+          c--;
         }
       }
     }
