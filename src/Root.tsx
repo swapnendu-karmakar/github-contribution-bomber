@@ -8,13 +8,13 @@ export interface BombTarget {
   frame: number;
 }
 
-export interface MyCompositionProps {
+export type MyCompositionProps = {
   levels: number[];
   targets: BombTarget[];
   flightPath: { x: number; z: number }[];
   durationInFrames: number;
   username: string;
-}
+};
 
 import { Vector3, CatmullRomCurve3 } from "three";
 import { SPACING } from "./ContributionGrid";
