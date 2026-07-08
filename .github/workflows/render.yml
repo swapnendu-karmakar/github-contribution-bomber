@@ -22,8 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           rm -f package-lock.json
-          npx pnpm install --no-frozen-lockfile
-          npx pnpm add @tailwindcss/oxide-linux-x64-gnu
+          yarn install
 
       - name: Render Video
         # Automatically passes the repository owner's username as a prop so anyone can fork this!
